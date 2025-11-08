@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance System - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 450px;
+            padding: 40px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #2563eb;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            color: #6b7280;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .password-field {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6b7280;
+            font-size: 18px;
+        }
+
+        .error-message {
+            color: #dc2626;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: -10px;
+            margin-bottom: 20px;
+        }
+
+        .forgot-password a {
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: #e5e7eb;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            color: #6b7280;
+            font-size: 13px;
+            position: relative;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .alert.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            .logo h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>📋 Attendance System</h1>
+            <p>VIT College ID Scanner</p>
+        </div>
+
+        <div class="alert" id="alertBox"></div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('login')">Login</div>
+            <div class="tab" onclick="switchTab('signup')">Sign Up</div>
+        </div>
+
+        <!-- Login Form -->
+        <div class="form-section active" id="loginForm">
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input type="email" id="loginEmail" placeholder="Enter your email" required>
+                    <div class="error-message" id="loginEmailError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <div class="password-field">
+                        <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                        <span class="toggle-password" onclick="togglePassword('loginPassword')">👁️</span>
+                    </div>
+                    <div class="error-message" id="loginPasswordError"></div>
+                </div>
+
+                <div class="forgot-password">
+                    <a href="#" onclick="handleForgotPassword(event)">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="btn" id="loginBtn">
+                    Login
+                </button>
+            </form>
+        </div>
+
+        <!-- Signup Form -->
+        <div class="form-section" id="signupForm">
+            <form onsubmit="handleSignup(event)">
+                <div class="form-group">
+                    <label for="signupName">Full Name</label>
+                    <input type="text" id="signupName" placeholder="Enter your full name" required>
+                    <div class="error-message" id="signupNameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="signupEmail">Email Address</label>
+                    <input type="email" id="signupEmail" placeholder="Enter your email" required>
+                    <div class="error-message" id="signupEmailError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <div class="password-field">
+                        <input type="password" id="signupPassword" placeholder="Create a password (min 8 characters)" required minlength="8">
+                        <span class="toggle-password" onclick="togglePassword('signupPassword')">👁️</span>
+                    </div>
+                    <div class="error-message" id="signupPasswordError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="signupConfirmPassword">Confirm Password</label>
+                    <div class="password-field">
+                        <input type="password" id="signupConfirmPassword" placeholder="Confirm your password" required>
+                        <span class="toggle-password" onclick="togglePassword('signupConfirmPassword')">👁️</span>
+                    </div>
+                    <div class="error-message" id="signupConfirmError"></div>
+                </div>
+
+                <button type="submit" class="btn" id="signupBtn">
+                    Create Account
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - REPLACE THESE VALUES
+        // ============================================
+        const AWS_CONFIG = {
+            region: 'YOUR_AWS_REGION',              // Example: 'us-east-1'
+            userPoolId: 'YOUR_USER_POOL_ID',        // Example: 'us-east-1_ABC123xyz'
+            clientId: 'YOUR_CLIENT_ID'              // Example: '1a2b3c4d5e6f7g8h9i0j'
+        };
+
+        // ============================================
+        // TAB SWITCHING
+        // ============================================
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+            
+            if (tab === 'login') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('loginForm').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('signupForm').classList.add('active');
+            }
+            
+            hideAlert();
+        }
+
+        // ============================================
+        // PASSWORD VISIBILITY TOGGLE
+        // ============================================
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        // ============================================
+        // ALERT FUNCTIONS
+        // ============================================
+        function showAlert(message, type) {
+            const alert = document.getElementById('alertBox');
+            alert.textContent = message;
+            alert.className = `alert ${type} show`;
+        }
+
+        function hideAlert() {
+            document.getElementById('alertBox').className = 'alert';
+        }
+
+        // ============================================
+        // LOGIN HANDLER
+        // ============================================
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const btn = document.getElementById('loginBtn');
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Logging in...';
+            hideAlert();
+
+            try {
+                // Email validation
+                if (!email.includes('@')) {
+                    throw new Error('Please enter a valid email address');
+                }
+
+                // TODO: Replace with AWS Cognito authentication
+                // For now, simulate login (REMOVE THIS IN PRODUCTION)
+                await simulateAuth(email, password);
+                
+                // Store user session
+                sessionStorage.setItem('userEmail', email);
+                sessionStorage.setItem('isLoggedIn', 'true');
+                
+                showAlert('✅ Login successful! Redirecting...', 'success');
+                
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+
+            } catch (error) {
+                showAlert('❌ ' + error.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = 'Login';
+            }
+        }
+
+        // ============================================
+        // SIGNUP HANDLER
+        // ============================================
+        async function handleSignup(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('signupConfirmPassword').value;
+            const btn = document.getElementById('signupBtn');
+            
+            // Clear previous errors
+            hideAlert();
+            document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
+            
+            try {
+                // Validation
+                if (password !== confirmPassword) {
+                    throw new Error('Passwords do not match');
+                }
+                
+                if (password.length < 8) {
+                    throw new Error('Password must be at least 8 characters');
+                }
+                
+                if (!email.includes('@')) {
+                    throw new Error('Please enter a valid email');
+                }
+
+                // Disable button and show loading
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span>Creating Account...';
+
+                // TODO: Replace with AWS Cognito signup
+                await simulateSignup(name, email, password);
+                
+                showAlert('✅ Account created! Please check your email for verification code.', 'success');
+                
+                // Switch to login tab after 2 seconds
+                setTimeout(() => {
+                    switchTab('login');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Create Account';
+                }, 2000);
+
+            } catch (error) {
+                showAlert('❌ ' + error.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = 'Create Account';
+            }
+        }
+
+        // ============================================
+        // FORGOT PASSWORD
+        // ============================================
+        function handleForgotPassword(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            
+            if (!email) {
+                showAlert('⚠️ Please enter your email address first', 'error');
+                return;
+            }
+            
+            // TODO: Implement AWS Cognito forgot password
+            showAlert('📧 Password reset link sent to your email!', 'success');
+        }
+
+        // ============================================
+        // SIMULATION FUNCTIONS (REMOVE IN PRODUCTION)
+        // ============================================
+        function simulateAuth(email, password) {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    // Simulate authentication check
+                    if (email && password.length >= 6) {
+                        resolve({ success: true });
+                    } else {
+                        reject(new Error('Invalid credentials'));
+                    }
+                }, 1000);
+            });
+        }
+
+        function simulateSignup(name, email, password) {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    // Simulate signup
+                    if (name && email && password.length >= 8) {
+                        resolve({ success: true });
+                    } else {
+                        reject(new Error('Signup failed'));
+                    }
+                }, 1500);
+            });
+        }
+
+        // ============================================
+        // CHECK IF ALREADY LOGGED IN
+        // ============================================
+        window.onload = function() {
+            if (sessionStorage.getItem('isLoggedIn') === 'true') {
+                window.location.href = 'dashboard.html';
+            }
+        };
+    </script>
+</body>
+</html>

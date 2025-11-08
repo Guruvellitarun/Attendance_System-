@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Attendance System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f3f4f6;
+            min-height: 100vh;
+        }
+
+        /* Navigation Bar */
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2563eb;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-tab {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #6b7280;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .nav-tab.active {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .nav-tab:hover {
+            background: #f3f4f6;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .profile-pic {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 10px 0;
+            min-width: 200px;
+            display: none;
+        }
+
+        .dropdown.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: #f3f4f6;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 10px;
+        }
+
+        .page-subtitle {
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .stat-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f9fafb;
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s;
+        }
+
+        .search-box:focus-within {
+            border-color: #2563eb;
+            background: white;
+        }
+
+        .search-box input {
+            border: none;
+            background: none;
+            outline: none;
+            font-size: 15px;
+            width: 250px;
+            font-family: inherit;
+        }
+
+        .search-icon {
+            color: #9ca3af;
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f9fafb;
+        }
+
+        th {
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th.sortable:hover {
+            background: #f3f4f6;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        td {
+            padding: 18px 20px;
+            color: #111827;
+        }
+
+        .date-cell {
+            font-weight: 500;
+        }
+
+        .time-cell {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .count-badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .download-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .download-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .delete-btn {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 8px;
+        }
+
+        .delete-btn:hover {
+            background: #fecaca;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+
+        .empty-state-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .empty-state-text {
+            color: #9ca3af;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 15px;
+            }
+
+            .nav-left {
+                gap: 15px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .search-box input {
+                width: 100%;
+            }
+
+            table {
+                font-size: 14px;
+            }
+
+            th, td {
+                padding: 12px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <div class="logo">📋 Attendance</div>
+            <div class="nav-tabs">
+                <div class="nav-tab" onclick="goToDashboard()">Home</div>
+                <div class="nav-tab active">Reports</div>
+            </div>
+        </div>
+        <div class="profile-section" onclick="toggleDropdown()">
+            <div class="profile-pic" id="profilePic">U</div>
+            <span id="userName">User</span>
+            <div class="dropdown" id="dropdown">
+                <div class="dropdown-item" onclick="logout()">🚪 Logout</div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">Attendance Reports</h1>
+            <p class="page-subtitle">View and download all your generated attendance reports</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-value" id="totalReports">0</div>
+                <div class="stat-label">Total Reports</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value" id="totalStudents">0</div>
+                <div class="stat-label">Total Students Recorded</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-value" id="thisMonth">0</div>
+                <div class="stat-label">Reports This Month</div>
+            </div>
+        </div>
+
+        <!-- Reports Table -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">All Reports</h2>
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Search by date..." id="searchInput" oninput="filterReports()">
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div id="reportsContent">
+                    <!-- Reports will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - REPLACE THESE VALUES
+        // ============================================
+        const API_CONFIG = {
+            apiGatewayUrl: 'YOUR_API_GATEWAY_URL',
+            s3BucketName: 'YOUR_S3_BUCKET_NAME'
+        };
+
+        let allReports = [];
+        let filteredReports = [];
+
+        // ============================================
+        // INITIALIZE
+        // ============================================
+        window.onload = function() {
+            // Check authentication
+            if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Set user info
+            const email = sessionStorage.getItem('userEmail') || 'user@example.com';
+            document.getElementById('userName').textContent = email.split('@')[0];
+            document.getElementById('profilePic').textContent = email.charAt(0).toUpperCase();
+
+            // Load reports
+            loadReports();
+        };
+
+        // ============================================
+        // LOAD REPORTS
+        // ============================================
+        async function loadReports() {
+            try {
+                // TODO: Replace with actual API call
+                allReports = await fetchReportsFromAPI();
+                filteredReports = [...allReports];
+                
+                displayReports();
+                updateStatistics();
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                showEmptyState();
+            }
+        }
+
+        async function fetchReportsFromAPI() {
+            // Simulate API call - REPLACE WITH REAL API
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    // Sample data
+                    const sampleReports = [
+                        {
+                            id: '1',
+                            date: '2024-11-07',
+                            time: '10:30',
+                            studentCount: 45,
+                            downloadUrl: '#'
+                        },
+                        {
+                            id: '2',
+                            date: '2024-11-06',
+                            time: '14:15',
+                            studentCount: 38,
+                            downloadUrl: '#'
+                        },
+                        {
+                            id: '3',
+                            date: '2024-11-05',
+                            time: '09:00',
+                            studentCount: 52,
+                            downloadUrl: '#'
+                        }
+                    ];
+                    resolve(sampleReports);
+                }, 1000);
+            });
+        }
+
+        // ============================================
+        // DISPLAY REPORTS
+        // ============================================
+        function displayReports() {
+            const content = document.getElementById('reportsContent');
+
+            if (filteredReports.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="sortable" onclick="sortBy('date')">Date</th>
+                            <th class="sortable" onclick="sortBy('time')">Time</th>
+                            <th class="sortable" onclick="sortBy('count')">Students</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            filteredReports.forEach(report => {
+                tableHTML += `
+                    <tr>
+                        <td class="date-cell">${formatDate(report.date)}</td>
+                        <td class="time-cell">${formatTime(report.time)}</td>
+                        <td><span class="count-badge">${report.studentCount} students</span></td>
+                        <td>
+                            <button class="download-btn" onclick="downloadReport('${report.id}', '${report.downloadUrl}')">
+                                📥 Download
+                            </button>
+                            <button class="delete-btn" onclick="deleteReport('${report.id}')">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            content.innerHTML = tableHTML;
+        }
+
+        function showEmptyState() {
+            const content = document.getElementById('reportsContent');
+            content.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <div class="empty-state-title">No Reports Yet</div>
+                    <p class="empty-state-text">Start by creating your first attendance report</p>
+                    <button class="btn-primary" onclick="goToDashboard()">Create Report</button>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // UPDATE STATISTICS
+        // ============================================
+        function updateStatistics() {
+            document.getElementById('totalReports').textContent = allReports.length;
+            
+            const totalStudents = allReports.reduce((sum, report) => sum + report.studentCount, 0);
+            document.getElementById('totalStudents').textContent = totalStudents;
+            
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            const thisMonthReports = allReports.filter(report => {
+                const reportDate = new Date(report.date);
+                return reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear;
+            });
+            document.getElementById('thisMonth').textContent = thisMonthReports.length;
+        }
+
+        // ============================================
+        // SEARCH AND FILTER
+        // ============================================
+        function filterReports() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (searchTerm === '') {
+                filteredReports = [...allReports];
+            } else {
+                filteredReports = allReports.filter(report => 
+                    report.date.includes(searchTerm) || 
+                    formatDate(report.date).toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            displayReports();
+        }
+
+        // ============================================
+        // SORTING
+        // ============================================
+        let currentSort = { field: 'date', ascending: false };
+
+        function sortBy(field) {
+            if (currentSort.field === field) {
+                currentSort.ascending = !currentSort.ascending;
+            } else {
+                currentSort.field = field;
+                currentSort.ascending = true;
+            }
+
+            filteredReports.sort((a, b) => {
+                let aVal, bVal;
+
+                switch(field) {
+                    case 'date':
+                        aVal = new Date(a.date);
+                        bVal = new Date(b.date);
+                        break;
+                    case 'time':
+                        aVal = a.time;
+                        bVal = b.time;
+                        break;
+                    case 'count':
+                        aVal = a.studentCount;
+                        bVal = b.studentCount;
+                        break;
+                    default:
+                        return 0;
+                }
+
+                if (aVal < bVal) return currentSort.ascending ? -1 : 1;
+                if (aVal > bVal) return currentSort.ascending ? 1 : -1;
+                return 0;
+            });
+
+            displayReports();
+        }
+
+        // ============================================
+        // DOWNLOAD REPORT
+        // ============================================
+        async function downloadReport(id, url) {
+            try {
+                // TODO: Replace with actual S3 download
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `attendance_report_${id}.xlsx`;
+                link.click();
+                
+                alert('✅ Report downloaded successfully!');
+            } catch (error) {
+                alert('❌ Error downloading report: ' + error.message);
+            }
+        }
+
+        // ============================================
+        // DELETE REPORT
+        // ============================================
+        async function deleteReport(id) {
+            if (!confirm('Are you sure you want to delete this report?')) {
+                return;
+            }
+
+            try {
+                // TODO: Replace with actual API call
+                allReports = allReports.filter(r => r.id !== id);
+                filteredReports = filteredReports.filter(r => r.id !== id);
+                
+                displayReports();
+                updateStatistics();
+                
+                alert('✅ Report deleted successfully!');
+            } catch (error) {
+                alert('❌ Error deleting report: ' + error.message);
+            }
+        }
+
+        // ============================================
+        // NAVIGATION
+        // ============================================
+        function toggleDropdown() {
+            document.getElementById('dropdown').classList.toggle('show');
+        }
+
+        function goToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function formatTime(timeStr) {
+            const [hours, minutes] = timeStr.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 || 12;
+            return `${displayHour}:${minutes} ${ampm}`;
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.profile-section')) {
+                document.getElementById('dropdown').classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

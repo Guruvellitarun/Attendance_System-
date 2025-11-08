@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Attendance System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f3f4f6;
+            min-height: 100vh;
+        }
+
+        /* Navigation Bar */
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2563eb;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-tab {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #6b7280;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .nav-tab.active {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .nav-tab:hover {
+            background: #f3f4f6;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .profile-pic {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 10px 0;
+            min-width: 200px;
+            display: none;
+        }
+
+        .dropdown.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: #f3f4f6;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 40% 60%;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 20px;
+        }
+
+        /* Left Section */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="date"],
+        input[type="time"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .upload-section {
+            margin: 25px 0;
+        }
+
+        .upload-btn {
+            width: 100%;
+            padding: 16px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .upload-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+        }
+
+        .upload-options {
+            display: none;
+            margin-top: 15px;
+            gap: 15px;
+        }
+
+        .upload-options.show {
+            display: flex;
+        }
+
+        .upload-option {
+            flex: 1;
+            padding: 12px;
+            border: 2px dashed #d1d5db;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-option:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .upload-option input[type="file"] {
+            display: none;
+        }
+
+        .preview-section {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .preview-section.show {
+            display: block;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .preview-item {
+            position: relative;
+            padding-top: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .preview-item img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .remove-preview {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(220, 38, 38, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn-secondary {
+            padding: 12px;
+            background: #6b7280;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn-primary {
+            padding: 12px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #059669;
+        }
+
+        /* Right Section */
+        .extracted-data {
+            min-height: 400px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+
+        .data-list {
+            display: none;
+        }
+
+        .data-list.show {
+            display: block;
+        }
+
+        .data-card {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .data-card:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.1);
+        }
+
+        .data-info {
+            flex: 1;
+        }
+
+        .data-name {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .data-rg {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .delete-btn {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #fecaca;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 40px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Camera Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        #cameraPreview {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .navbar {
+                padding: 0 15px;
+            }
+            
+            .nav-left {
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <div class="logo">📋 Attendance</div>
+            <div class="nav-tabs">
+                <div class="nav-tab active" onclick="showHome()">Home</div>
+                <div class="nav-tab" onclick="goToReports()">Reports</div>
+            </div>
+        </div>
+        <div class="profile-section" onclick="toggleDropdown()">
+            <div class="profile-pic" id="profilePic">U</div>
+            <span id="userName">User</span>
+            <div class="dropdown" id="dropdown">
+                <div class="dropdown-item" onclick="logout()">🚪 Logout</div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="dashboard-grid">
+            <!-- Left Section -->
+            <div class="card">
+                <h2 class="card-title">Attendance Details</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" id="attendanceDate">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Time</label>
+                    <input type="time" id="attendanceTime">
+                </div>
+
+                <div class="upload-section">
+                    <button class="upload-btn" onclick="toggleUploadOptions()">
+                        📷 Upload ID Cards
+                    </button>
+                    
+                    <div class="upload-options" id="uploadOptions">
+                        <div class="upload-option" onclick="openCamera()">
+                            <div style="font-size: 32px; margin-bottom: 8px;">📷</div>
+                            <div style="font-weight: 500;">Take Photo</div>
+                        </div>
+                        <label class="upload-option">
+                            <div style="font-size: 32px; margin-bottom: 8px;">📁</div>
+                            <div style="font-weight: 500;">Upload Files</div>
+                            <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFileSelect(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="preview-section" id="previewSection">
+                    <label class="form-label">Selected Images</label>
+                    <div class="preview-grid" id="previewGrid"></div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn-secondary" onclick="clearAll()">🔄 New Image</button>
+                        <button class="btn-primary" onclick="generateReport()">📊 Generate Report</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Section -->
+            <div class="card extracted-data">
+                <h2 class="card-title">Extracted Data</h2>
+                
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-state-icon">📋</div>
+                    <p>Upload ID cards to see extracted attendance data</p>
+                </div>
+
+                <div class="data-list" id="dataList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Modal -->
+    <div class="modal" id="cameraModal">
+        <div class="modal-content">
+            <video id="cameraPreview" autoplay></video>
+            <canvas id="cameraCanvas" style="display:none;"></canvas>
+            <div class="camera-controls">
+                <button class="btn-primary" style="flex:1;" onclick="capturePhoto()">📸 Capture</button>
+                <button class="btn-secondary" style="flex:1;" onclick="closeCamera()">✖ Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - REPLACE THESE VALUES
+        // ============================================
+        const API_CONFIG = {
+            apiGatewayUrl: 'YOUR_API_GATEWAY_URL',  // Example: 'https://abc123.execute-api.us-east-1.amazonaws.com/prod'
+            s3BucketName: 'YOUR_S3_BUCKET_NAME'     // Example: 'attendance-system-bucket-123'
+        };
+
+        let uploadedFiles = [];
+        let extractedData = [];
+        let cameraStream = null;
+
+        // ============================================
+        // INITIALIZE
+        // ============================================
+        window.onload = function() {
+            // Check authentication
+            if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Set user info
+            const email = sessionStorage.getItem('userEmail') || 'user@example.com';
+            document.getElementById('userName').textContent = email.split('@')[0];
+            document.getElementById('profilePic').textContent = email.charAt(0).toUpperCase();
+
+            // Set current date and time
+            const now = new Date();
+            document.getElementById('attendanceDate').valueAsDate = now;
+            document.getElementById('attendanceTime').value = now.toTimeString().slice(0, 5);
+        };
+
+        // ============================================
+        // NAVIGATION
+        // ============================================
+        function toggleDropdown() {
+            document.getElementById('dropdown').classList.toggle('show');
+        }
+
+        function showHome() {
+            // Already on home
+        }
+
+        function goToReports() {
+            window.location.href = 'reports.html';
+        }
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // ============================================
+        // UPLOAD HANDLING
+        // ============================================
+        function toggleUploadOptions() {
+            document.getElementById('uploadOptions').classList.toggle('show');
+        }
+
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            
+            if (files.length + uploadedFiles.length > 20) {
+                alert('⚠️ Maximum 20 images allowed');
+                return;
+            }
+
+            uploadedFiles = [...uploadedFiles, ...files];
+            displayPreviews();
+            processImages(files);
+            
+            document.getElementById('previewSection').classList.add('show');
+            document.getElementById('uploadOptions').classList.remove('show');
+        }
+
+        function displayPreviews() {
+            const grid = document.getElementById('previewGrid');
+            grid.innerHTML = '';
+
+            uploadedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'preview-item';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <button class="remove-preview" onclick="removePreview(${index})">✖</button>
+                    `;
+                    grid.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function removePreview(index) {
+            uploadedFiles.splice(index, 1);
+            extractedData.splice(index, 1);
+            displayPreviews();
+            displayExtractedData();
+            
+            if (uploadedFiles.length === 0) {
+                document.getElementById('previewSection').classList.remove('show');
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('dataList').classList.remove('show');
+            }
+        }
+
+        function clearAll() {
+            uploadedFiles = [];
+            extractedData = [];
+            document.getElementById('previewGrid').innerHTML = '';
+            document.getElementById('previewSection').classList.remove('show');
+            document.getElementById('dataList').innerHTML = '';
+            document.getElementById('dataList').classList.remove('show');
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('fileInput').value = '';
+        }
+
+        // ============================================
+        // CAMERA FUNCTIONS
+        // ============================================
+        async function openCamera() {
+            try {
+                const modal = document.getElementById('cameraModal');
+                const video = document.getElementById('cameraPreview');
+                
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                
+                video.srcObject = cameraStream;
+                modal.classList.add('show');
+                document.getElementById('uploadOptions').classList.remove('show');
+            } catch (error) {
+                alert('❌ Camera access denied or not available');
+                console.error(error);
+            }
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('cameraPreview');
+            const canvas = document.getElementById('cameraCanvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            
+            canvas.toBlob((blob) => {
+                const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                uploadedFiles.push(file);
+                displayPreviews();
+                processImages([file]);
+                document.getElementById('previewSection').classList.add('show');
+                closeCamera();
+            }, 'image/jpeg');
+        }
+
+        function closeCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            document.getElementById('cameraModal').classList.remove('show');
+        }
+
+        // ============================================
+        // IMAGE PROCESSING
+        // ============================================
+        async function processImages(files) {
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('dataList').innerHTML = '<div class="loading-spinner"></div>';
+            document.getElementById('dataList').classList.add('show');
+
+            for (const file of files) {
+                try {
+                    // TODO: Replace with actual API call to Lambda + Textract
+                    const data = await simulateTextExtraction(file);
+                    extractedData.push(data);
+                } catch (error) {
+                    console.error('Error processing image:', error);
+                    extractedData.push({ name: 'Error reading', rgNumber: 'N/A' });
+                }
+            }
+
+            displayExtractedData();
+        }
+
+        function displayExtractedData() {
+            const dataList = document.getElementById('dataList');
+            dataList.innerHTML = '';
+
+            extractedData.forEach((data, index) => {
+                const card = document.createElement('div');
+                card.className = 'data-card';
+                card.innerHTML = `
+                    <div class="data-info">
+                        <div class="data-name">${data.name}</div>
+                        <div class="data-rg">RG: ${data.rgNumber}</div>
+                    </div>
+                    <button class="delete-btn" onclick="deleteEntry(${index})">✖</button>
+                `;
+                dataList.appendChild(card);
+            });
+        }
+
+        function deleteEntry(index) {
+            extractedData.splice(index, 1);
+            uploadedFiles.splice(index, 1);
+            displayExtractedData();
+            displayPreviews();
+
+            if (extractedData.length === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('dataList').classList.remove('show');
+                document.getElementById('previewSection').classList.remove('show');
+            }
+        }
+
+        // ============================================
+        // GENERATE REPORT
+        // ============================================
+        async function generateReport() {
+            if (extractedData.length === 0) {
+                alert('⚠️ No data to generate report');
+                return;
+            }
+
+            const date = document.getElementById('attendanceDate').value;
+            const time = document.getElementById('attendanceTime').value;
+
+            try {
+                // TODO: Replace with actual API call to Lambda
+                const reportUrl = await simulateReportGeneration(extractedData, date, time);
+                
+                alert('✅ Report generated successfully!');
+                
+                // Download the report
+                const link = document.createElement('a');
+                link.href = reportUrl;
+                link.download = `attendance_${date}_${time.replace(':', '')}.xlsx`;
+                link.click();
+                
+                // Clear after generating
+                clearAll();
+            } catch (error) {
+                alert('❌ Error generating report: ' + error.message);
+            }
+        }
+
+        // ============================================
+        // SIMULATION FUNCTIONS (REPLACE WITH REAL API)
+        // ============================================
+        function simulateTextExtraction(file) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const randomId = Math.floor(Math.random() * 10000);
+                    resolve({
+                        name: `Student ${randomId}`,
+                        rgNumber: `RG${randomId.toString().padStart(6, '0')}`
+                    });
+                }, 1000);
+            });
+        }
+
+        function simulateReportGeneration(data, date, time) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    // In production, this would return the S3 URL
+                    resolve('data:text/plain;charset=utf-8,' + encodeURIComponent(
+                        'Attendance Report\n' +
+                        'Date: ' + date + '\n' +
+                        'Time: ' + time + '\n\n' +
+                        data.map(d => `${d.name} - ${d.rgNumber}`).join('\n')
+                    ));
+                }, 1500);
+            });
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.profile-section')) {
+                document.getElementById('dropdown').classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
