@@ -17,7 +17,6 @@
             min-height: 100vh;
         }
 
-        /* Navigation Bar */
         .navbar {
             background: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -113,7 +112,6 @@
             background: #f3f4f6;
         }
 
-        /* Main Content */
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -141,7 +139,6 @@
             margin-bottom: 20px;
         }
 
-        /* Left Section */
         .form-group {
             margin-bottom: 20px;
         }
@@ -239,6 +236,8 @@
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 10px;
             margin-bottom: 15px;
+            max-height: 250px;
+            overflow-y: auto;
         }
 
         .preview-item {
@@ -273,6 +272,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 10;
         }
 
         .action-buttons {
@@ -311,7 +311,11 @@
             background: #059669;
         }
 
-        /* Right Section */
+        .btn-primary:disabled, .btn-secondary:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
         .extracted-data {
             min-height: 400px;
         }
@@ -345,6 +349,18 @@
             justify-content: space-between;
             align-items: center;
             transition: all 0.3s;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         .data-card:hover {
@@ -401,7 +417,17 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Camera Modal */
+        .processing-badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -454,7 +480,6 @@
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="nav-left">
             <div class="logo">📋 Attendance</div>
@@ -472,10 +497,8 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <div class="container">
         <div class="dashboard-grid">
-            <!-- Left Section -->
             <div class="card">
                 <h2 class="card-title">Attendance Details</h2>
                 
@@ -508,19 +531,18 @@
                 </div>
 
                 <div class="preview-section" id="previewSection">
-                    <label class="form-label">Selected Images</label>
+                    <label class="form-label">Selected Images (<span id="imageCount">0</span>/20)</label>
                     <div class="preview-grid" id="previewGrid"></div>
                     
                     <div class="action-buttons">
-                        <button class="btn-secondary" onclick="clearAll()">🔄 New Image</button>
-                        <button class="btn-primary" onclick="generateReport()">📊 Generate Report</button>
+                        <button class="btn-secondary" onclick="clearAll()">🔄 Clear All</button>
+                        <button class="btn-primary" id="generateBtn" onclick="generateReport()">📊 Generate Report</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Section -->
             <div class="card extracted-data">
-                <h2 class="card-title">Extracted Data</h2>
+                <h2 class="card-title">Extracted Data <span id="processingBadge" class="processing-badge" style="display:none;">Processing...</span></h2>
                 
                 <div class="empty-state" id="emptyState">
                     <div class="empty-state-icon">📋</div>
@@ -532,7 +554,6 @@
         </div>
     </div>
 
-    <!-- Camera Modal -->
     <div class="modal" id="cameraModal">
         <div class="modal-content">
             <video id="cameraPreview" autoplay></video>
@@ -549,30 +570,32 @@
         // CONFIGURATION - REPLACE THESE VALUES
         // ============================================
         const API_CONFIG = {
-            apiGatewayUrl: 'https://asobmn3tj7.execute-api.ap-south-1.amazonaws.com/prod',  // Example: 'https://abc123.execute-api.us-east-1.amazonaws.com/prod'
-            s3BucketName: 'attendance-system-gt-123'     // Example: 'attendance-system-bucket-123'
+            apiGatewayUrl: 'https://asobmn3tj7.execute-api.ap-south-1.amazonaws.com/prod',
+            s3BucketName: 'attendance-system-gt-123'
         };
 
+        // ============================================
+        // GLOBAL STATE
+        // ============================================
         let uploadedFiles = [];
         let extractedData = [];
         let cameraStream = null;
+        let processingQueue = [];
+        let isProcessing = false;
 
         // ============================================
         // INITIALIZE
         // ============================================
         window.onload = function() {
-            // Check authentication
             if (sessionStorage.getItem('isLoggedIn') !== 'true') {
                 window.location.href = 'login.html';
                 return;
             }
 
-            // Set user info
             const email = sessionStorage.getItem('userEmail') || 'user@example.com';
             document.getElementById('userName').textContent = email.split('@')[0];
             document.getElementById('profilePic').textContent = email.charAt(0).toUpperCase();
 
-            // Set current date and time
             const now = new Date();
             document.getElementById('attendanceDate').valueAsDate = now;
             document.getElementById('attendanceTime').value = now.toTimeString().slice(0, 5);
@@ -585,9 +608,7 @@
             document.getElementById('dropdown').classList.toggle('show');
         }
 
-        function showHome() {
-            // Already on home
-        }
+        function showHome() {}
 
         function goToReports() {
             window.location.href = 'reports.html';
@@ -599,26 +620,36 @@
         }
 
         // ============================================
-        // UPLOAD HANDLING
+        // UPLOAD HANDLING (FIX: Keep previous images)
         // ============================================
         function toggleUploadOptions() {
             document.getElementById('uploadOptions').classList.toggle('show');
         }
 
         function handleFileSelect(event) {
-            const files = Array.from(event.target.files);
+            const newFiles = Array.from(event.target.files);
             
-            if (files.length + uploadedFiles.length > 20) {
-                alert('⚠️ Maximum 20 images allowed');
+            if (uploadedFiles.length + newFiles.length > 20) {
+                alert('⚠️ Maximum 20 images allowed. You have ' + uploadedFiles.length + ' images already.');
                 return;
             }
 
-            uploadedFiles = [...uploadedFiles, ...files];
+            // ADD new files to existing ones (don't replace!)
+            uploadedFiles = [...uploadedFiles, ...newFiles];
+            
+            updateImageCount();
             displayPreviews();
-            processImages(files);
+            processImages(newFiles);  // Only process NEW files
             
             document.getElementById('previewSection').classList.add('show');
             document.getElementById('uploadOptions').classList.remove('show');
+            
+            // Reset file input so same file can be selected again
+            event.target.value = '';
+        }
+
+        function updateImageCount() {
+            document.getElementById('imageCount').textContent = uploadedFiles.length;
         }
 
         function displayPreviews() {
@@ -643,6 +674,8 @@
         function removePreview(index) {
             uploadedFiles.splice(index, 1);
             extractedData.splice(index, 1);
+            
+            updateImageCount();
             displayPreviews();
             displayExtractedData();
             
@@ -654,14 +687,21 @@
         }
 
         function clearAll() {
+            if (uploadedFiles.length > 0 && !confirm('Clear all images and data?')) {
+                return;
+            }
+            
             uploadedFiles = [];
             extractedData = [];
+            processingQueue = [];
+            
             document.getElementById('previewGrid').innerHTML = '';
             document.getElementById('previewSection').classList.remove('show');
             document.getElementById('dataList').innerHTML = '';
             document.getElementById('dataList').classList.remove('show');
             document.getElementById('emptyState').style.display = 'block';
             document.getElementById('fileInput').value = '';
+            updateImageCount();
         }
 
         // ============================================
@@ -697,6 +737,8 @@
             canvas.toBlob((blob) => {
                 const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
                 uploadedFiles.push(file);
+                
+                updateImageCount();
                 displayPreviews();
                 processImages([file]);
                 document.getElementById('previewSection').classList.add('show');
@@ -713,25 +755,68 @@
         }
 
         // ============================================
-        // IMAGE PROCESSING
+        // IMAGE PROCESSING (FIXED API CALL)
         // ============================================
         async function processImages(files) {
             document.getElementById('emptyState').style.display = 'none';
-            document.getElementById('dataList').innerHTML = '<div class="loading-spinner"></div>';
             document.getElementById('dataList').classList.add('show');
+            document.getElementById('processingBadge').style.display = 'inline-block';
 
             for (const file of files) {
                 try {
-                    // TODO: Replace with actual API call to Lambda + Textract
-                    const data = await simulateTextExtraction(file);
-                    extractedData.push(data);
+                    console.log(`Processing: ${file.name}`);
+                    
+                    // Convert to base64
+                    const base64 = await fileToBase64(file);
+                    
+                    // Call API
+                    const response = await fetch(`${API_CONFIG.apiGatewayUrl}/process-image`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            image: base64,
+                            filename: file.name
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    console.log('Extraction result:', data);
+                    
+                    extractedData.push({
+                        name: data.name || 'Unknown',
+                        rgNumber: data.rgNumber || 'Not Found',
+                        filename: file.name
+                    });
+                    
                 } catch (error) {
                     console.error('Error processing image:', error);
-                    extractedData.push({ name: 'Error reading', rgNumber: 'N/A' });
+                    extractedData.push({ 
+                        name: 'Error Processing', 
+                        rgNumber: 'ERROR',
+                        filename: file.name
+                    });
                 }
+                
+                // Update display after each image
+                displayExtractedData();
             }
 
-            displayExtractedData();
+            document.getElementById('processingBadge').style.display = 'none';
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
         }
 
         function displayExtractedData() {
@@ -755,6 +840,8 @@
         function deleteEntry(index) {
             extractedData.splice(index, 1);
             uploadedFiles.splice(index, 1);
+            
+            updateImageCount();
             displayExtractedData();
             displayPreviews();
 
@@ -766,7 +853,7 @@
         }
 
         // ============================================
-        // GENERATE REPORT
+        // GENERATE REPORT (FIXED: Save to S3 & Reports page)
         // ============================================
         async function generateReport() {
             if (extractedData.length === 0) {
@@ -776,53 +863,70 @@
 
             const date = document.getElementById('attendanceDate').value;
             const time = document.getElementById('attendanceTime').value;
+            const userEmail = sessionStorage.getItem('userEmail');
+
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Generating...';
 
             try {
-                // TODO: Replace with actual API call to Lambda
-                const reportUrl = await simulateReportGeneration(extractedData, date, time);
-                
-                alert('✅ Report generated successfully!');
-                
+                console.log('Generating report with data:', extractedData);
+
+                // Call generate report API
+                const response = await fetch(`${API_CONFIG.apiGatewayUrl}/generate-report`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        attendanceData: extractedData,
+                        date: date,
+                        time: time
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Report generated:', result);
+
+                // Save to database
+                await fetch(`${API_CONFIG.apiGatewayUrl}/save-attendance`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        attendanceData: extractedData,
+                        date: date,
+                        time: time,
+                        userEmail: userEmail,
+                        reportUrl: result.downloadUrl
+                    })
+                });
+
                 // Download the report
                 const link = document.createElement('a');
-                link.href = reportUrl;
-                link.download = `attendance_${date}_${time.replace(':', '')}.xlsx`;
+                link.href = result.downloadUrl;
+                link.download = result.filename || `attendance_${date}_${time}.csv`;
                 link.click();
+
+                alert('✅ Report generated successfully!');
                 
                 // Clear after generating
-                clearAll();
-            } catch (error) {
-                alert('❌ Error generating report: ' + error.message);
-            }
-        }
-
-        // ============================================
-        // SIMULATION FUNCTIONS (REPLACE WITH REAL API)
-        // ============================================
-        function simulateTextExtraction(file) {
-            return new Promise((resolve) => {
                 setTimeout(() => {
-                    const randomId = Math.floor(Math.random() * 10000);
-                    resolve({
-                        name: `Student ${randomId}`,
-                        rgNumber: `RG${randomId.toString().padStart(6, '0')}`
-                    });
+                    clearAll();
                 }, 1000);
-            });
-        }
 
-        function simulateReportGeneration(data, date, time) {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    // In production, this would return the S3 URL
-                    resolve('data:text/plain;charset=utf-8,' + encodeURIComponent(
-                        'Attendance Report\n' +
-                        'Date: ' + date + '\n' +
-                        'Time: ' + time + '\n\n' +
-                        data.map(d => `${d.name} - ${d.rgNumber}`).join('\n')
-                    ));
-                }, 1500);
-            });
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert('❌ Error generating report: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📊 Generate Report';
+            }
         }
 
         // Close dropdown when clicking outside
