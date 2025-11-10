@@ -531,7 +531,7 @@
                 </div>
 
                 <div class="preview-section" id="previewSection">
-                    <label class="form-label">Selected Images (<span id="imageCount">0</span>/20)</label>
+                    <label class="form-label">Selected Images (<span id="imageCount">0</span>/50)</label>
                     <div class="preview-grid" id="previewGrid"></div>
                     
                     <div class="action-buttons">
@@ -629,8 +629,8 @@
         function handleFileSelect(event) {
             const newFiles = Array.from(event.target.files);
             
-            if (uploadedFiles.length + newFiles.length > 20) {
-                alert('⚠️ Maximum 20 images allowed. You have ' + uploadedFiles.length + ' images already.');
+            if (uploadedFiles.length + newFiles.length > 50) {
+                alert('⚠️ Maximum 50 images allowed. You have ' + uploadedFiles.length + ' images already.');
                 return;
             }
 
@@ -870,10 +870,10 @@
             btn.textContent = '⏳ Generating...';
 
             try {
-                console.log('Generating report with data:', extractedData);
+                console.log('Step 1: Generating report with data:', extractedData);
 
-                // Call generate report API
-                const response = await fetch(`${API_CONFIG.apiGatewayUrl}/generate-report`, {
+                // Step 1: Generate the Excel/CSV file
+                const reportResponse = await fetch(`${API_CONFIG.apiGatewayUrl}/generate-report`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -885,15 +885,16 @@
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status}`);
+                if (!reportResponse.ok) {
+                    throw new Error(`Report generation failed: ${reportResponse.status}`);
                 }
 
-                const result = await response.json();
-                console.log('Report generated:', result);
+                const reportResult = await reportResponse.json();
+                console.log('Step 2: Report generated successfully:', reportResult);
 
-                // Save to database
-                await fetch(`${API_CONFIG.apiGatewayUrl}/save-attendance`, {
+                // Step 2: Save to database
+                console.log('Step 3: Saving to database...');
+                const saveResponse = await fetch(`${API_CONFIG.apiGatewayUrl}/save-attendance`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -903,26 +904,38 @@
                         date: date,
                         time: time,
                         userEmail: userEmail,
-                        reportUrl: result.downloadUrl
+                        reportUrl: reportResult.downloadUrl
                     })
                 });
 
-                // Download the report
-                const link = document.createElement('a');
-                link.href = result.downloadUrl;
-                link.download = result.filename || `attendance_${date}_${time}.csv`;
-                link.click();
+                if (!saveResponse.ok) {
+                    console.warn('Database save failed, but report was generated');
+                }
 
-                alert('✅ Report generated successfully!');
+                const saveResult = await saveResponse.json();
+                console.log('Step 4: Saved to database:', saveResult);
+
+                // Step 3: Download the report
+                console.log('Step 5: Downloading report...');
+                const link = document.createElement('a');
+                link.href = reportResult.downloadUrl;
+                link.download = reportResult.filename || `attendance_${date}_${time.replace(':', '')}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                alert('✅ Report generated and saved successfully!\n\nYou can now view it in the Reports page.');
                 
-                // Clear after generating
+                console.log('✅ All steps completed successfully');
+
+                // Clear after success
                 setTimeout(() => {
                     clearAll();
-                }, 1000);
+                }, 1500);
 
             } catch (error) {
-                console.error('Error generating report:', error);
-                alert('❌ Error generating report: ' + error.message);
+                console.error('❌ Error generating report:', error);
+                alert('❌ Error generating report: ' + error.message + '\n\nCheck console for details (F12)');
             } finally {
                 btn.disabled = false;
                 btn.textContent = '📊 Generate Report';

@@ -478,8 +478,11 @@
             document.getElementById('userName').textContent = email.split('@')[0];
             document.getElementById('profilePic').textContent = email.charAt(0).toUpperCase();
 
-            // Load reports
+            // Load reports immediately
             loadReports();
+            
+            // Auto-refresh every 10 seconds
+            setInterval(loadReports, 10000);
         };
 
         // ============================================
