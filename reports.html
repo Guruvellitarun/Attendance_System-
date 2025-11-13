@@ -481,8 +481,10 @@
             // Load reports immediately
             loadReports();
             
-            // Auto-refresh every 10 seconds
-            setInterval(loadReports, 10000);
+            // Auto-refresh every 5 seconds (faster refresh)
+            setInterval(loadReports, 5000);
+            
+            console.log('✅ Reports page loaded. Auto-refreshing every 5 seconds.');
         };
 
         // ============================================
@@ -490,39 +492,51 @@
         // ============================================
         async function loadReports() {
             try {
-                // TODO: Replace with actual API call
+                console.log('Loading reports...');
                 allReports = await fetchReportsFromAPI();
                 filteredReports = [...allReports];
+                
+                console.log(`Loaded ${allReports.length} reports`);
                 
                 displayReports();
                 updateStatistics();
             } catch (error) {
                 console.error('Error loading reports:', error);
-                showEmptyState();
+                // Don't show error to user on auto-refresh
+                if (allReports.length === 0) {
+                    showEmptyState();
+                }
             }
         }
 
         async function fetchReportsFromAPI() {
             try {
-                const userEmail = sessionStorage.getItem('userEmail');
+                console.log('🔍 Fetching reports from S3...');
                 
-                const response = await fetch(`${API_CONFIG.apiGatewayUrl}/get-reports?email=${encodeURIComponent(userEmail)}`, {
+                const url = `${API_CONFIG.apiGatewayUrl}/list-reports`;
+                console.log(`API URL: ${url}`);
+                
+                const response = await fetch(url, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                     }
                 });
 
+                console.log(`Response status: ${response.status}`);
+
                 if (!response.ok) {
                     throw new Error(`API Error: ${response.status}`);
                 }
 
                 const data = await response.json();
+                console.log('✅ API Response:', data);
+                console.log(`✅ Found ${data.total} reports`);
+                
                 return data.reports || [];
                 
             } catch (error) {
-                console.error('Error fetching reports:', error);
-                // Return empty array if error
+                console.error('❌ Error fetching reports:', error);
                 return [];
             }
         }
@@ -555,7 +569,7 @@
                 tableHTML += `
                     <tr>
                         <td class="date-cell">${formatDate(report.date)}</td>
-                        <td class="time-cell">${formatTime(report.time)}</td>
+                        <td class="time-cell">${report.time}</td>
                         <td><span class="count-badge">${report.studentCount} students</span></td>
                         <td>
                             <button class="download-btn" onclick="downloadReport('${report.id}', '${report.downloadUrl}')">

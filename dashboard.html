@@ -459,6 +459,11 @@
             margin-bottom: 15px;
         }
 
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .camera-controls {
             display: flex;
             gap: 10px;
@@ -483,16 +488,13 @@
     <nav class="navbar">
         <div class="nav-left">
             <div class="logo">📋 Attendance</div>
-            <div class="nav-tabs">
-                <div class="nav-tab active" onclick="showHome()">Home</div>
-                <div class="nav-tab" onclick="goToReports()">Reports</div>
-            </div>
         </div>
         <div class="profile-section" onclick="toggleDropdown()">
             <div class="profile-pic" id="profilePic">U</div>
             <span id="userName">User</span>
             <div class="dropdown" id="dropdown">
-                <div class="dropdown-item" onclick="logout()">🚪 Logout</div>
+                <div class="dropdown-item" onclick="goToReports(); event.stopPropagation();">📊 View Reports</div>
+                <div class="dropdown-item" onclick="logout(); event.stopPropagation();">🚪 Logout</div>
             </div>
         </div>
     </nav>
@@ -508,8 +510,13 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Time</label>
-                    <input type="time" id="attendanceTime">
+                    <label class="form-label">Start Time</label>
+                    <input type="time" id="startTime">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">End Time</label>
+                    <input type="time" id="endTime">
                 </div>
 
                 <div class="upload-section">
@@ -574,6 +581,11 @@
             s3BucketName: 'attendance-system-gt-123'
         };
 
+        // Check if API is configured
+        if (API_CONFIG.apiGatewayUrl === 'YOUR_API_GATEWAY_URL') {
+            console.error('⚠️ API Gateway URL not configured! Please update API_CONFIG in the code.');
+        }
+
         // ============================================
         // GLOBAL STATE
         // ============================================
@@ -598,7 +610,11 @@
 
             const now = new Date();
             document.getElementById('attendanceDate').valueAsDate = now;
-            document.getElementById('attendanceTime').value = now.toTimeString().slice(0, 5);
+            document.getElementById('startTime').value = now.toTimeString().slice(0, 5);
+            
+            // Set end time to 1 hour later
+            const endTime = new Date(now.getTime() + 60 * 60 * 1000);
+            document.getElementById('endTime').value = endTime.toTimeString().slice(0, 5);
         };
 
         // ============================================
@@ -607,8 +623,6 @@
         function toggleDropdown() {
             document.getElementById('dropdown').classList.toggle('show');
         }
-
-        function showHome() {}
 
         function goToReports() {
             window.location.href = 'reports.html';
@@ -862,17 +876,42 @@
             }
 
             const date = document.getElementById('attendanceDate').value;
-            const time = document.getElementById('attendanceTime').value;
-            const userEmail = sessionStorage.getItem('userEmail');
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            
+            console.log('Generate Report clicked');
+            console.log('Date:', date);
+            console.log('Start Time:', startTime);
+            console.log('End Time:', endTime);
+            console.log('Extracted Data:', extractedData);
+            
+            // Validate date
+            if (!date) {
+                alert('⚠️ Please select a date');
+                return;
+            }
+            
+            // Validate times
+            if (!startTime || !endTime) {
+                alert('⚠️ Please enter both start time and end time');
+                return;
+            }
+            
+            // Validate time order
+            if (startTime >= endTime) {
+                alert('⚠️ End time must be after start time');
+                return;
+            }
 
             const btn = document.getElementById('generateBtn');
             btn.disabled = true;
-            btn.textContent = '⏳ Generating...';
+            btn.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-radius:50%;border-top-color:white;animation:spin 0.6s linear infinite;margin-right:8px;"></span>Generating...';
 
             try {
-                console.log('Step 1: Generating report with data:', extractedData);
+                console.log('📊 Calling API...');
+                console.log('URL:', `${API_CONFIG.apiGatewayUrl}/generate-report`);
 
-                // Step 1: Generate the Excel/CSV file
+                // Generate the Excel/CSV file
                 const reportResponse = await fetch(`${API_CONFIG.apiGatewayUrl}/generate-report`, {
                     method: 'POST',
                     headers: {
@@ -881,52 +920,37 @@
                     body: JSON.stringify({
                         attendanceData: extractedData,
                         date: date,
-                        time: time
+                        startTime: startTime,
+                        endTime: endTime
                     })
                 });
 
+                console.log('Response status:', reportResponse.status);
+
                 if (!reportResponse.ok) {
-                    throw new Error(`Report generation failed: ${reportResponse.status}`);
+                    const errorText = await reportResponse.text();
+                    console.error('API Error Response:', errorText);
+                    throw new Error(`Report generation failed: ${reportResponse.status} - ${errorText}`);
                 }
 
                 const reportResult = await reportResponse.json();
-                console.log('Step 2: Report generated successfully:', reportResult);
+                console.log('✅ Report generated:', reportResult);
 
-                // Step 2: Save to database
-                console.log('Step 3: Saving to database...');
-                const saveResponse = await fetch(`${API_CONFIG.apiGatewayUrl}/save-attendance`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        attendanceData: extractedData,
-                        date: date,
-                        time: time,
-                        userEmail: userEmail,
-                        reportUrl: reportResult.downloadUrl
-                    })
-                });
-
-                if (!saveResponse.ok) {
-                    console.warn('Database save failed, but report was generated');
+                if (!reportResult.downloadUrl) {
+                    throw new Error('No download URL in response');
                 }
 
-                const saveResult = await saveResponse.json();
-                console.log('Step 4: Saved to database:', saveResult);
-
-                // Step 3: Download the report
-                console.log('Step 5: Downloading report...');
+                // Download the report
+                console.log('📥 Downloading from:', reportResult.downloadUrl);
                 const link = document.createElement('a');
                 link.href = reportResult.downloadUrl;
-                link.download = reportResult.filename || `attendance_${date}_${time.replace(':', '')}.csv`;
+                link.download = reportResult.filename || `attendance_${date}_${startTime.replace(':', '')}.csv`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
 
-                alert('✅ Report generated and saved successfully!\n\nYou can now view it in the Reports page.');
-                
-                console.log('✅ All steps completed successfully');
+                console.log('✅ Download triggered');
+                alert('✅ Report generated and saved to S3!\n\nFile: ' + reportResult.filename + '\n\nGo to Reports page to view it.');
 
                 // Clear after success
                 setTimeout(() => {
@@ -934,8 +958,9 @@
                 }, 1500);
 
             } catch (error) {
-                console.error('❌ Error generating report:', error);
-                alert('❌ Error generating report: ' + error.message + '\n\nCheck console for details (F12)');
+                console.error('❌ Error:', error);
+                console.error('Full error:', error.stack);
+                alert('❌ Error generating report:\n\n' + error.message + '\n\nCheck browser console (F12) for details.');
             } finally {
                 btn.disabled = false;
                 btn.textContent = '📊 Generate Report';
